@@ -1,7 +1,9 @@
 import random
 import time
 import json
+import threading
 from datetime import datetime
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 class AdvancedCatGenerator:
     def __init__(self):
@@ -13,32 +15,41 @@ class AdvancedCatGenerator:
             'playful': {'energy': 95, 'hunger': 50}
         }
         self.history = []
+        self.current_state = {}
 
-    def generate_interaction(self):
+    def update_state(self):
         mood = random.choice(list(self.moods.keys()))
         sound = random.choice(self.purrs)
         stats = self.moods[mood]
-        
-        interaction = {
+        self.current_state = {
             'timestamp': datetime.now().isoformat(),
             'mood': mood,
             'sound': sound,
             'stats': stats
         }
-        self.history.append(interaction)
-        return interaction
+        self.history.append(self.current_state)
 
-    def run_simulation(self, iterations=5):
-        print('Starting advanced cat simulation...')
-        for i in range(iterations):
-            data = self.generate_interaction()
-            print(f'Step {i+1}: {data}')
-            time.sleep(0.5)
-        
-        with open('simulation_log.json', 'w') as f:
-            json.dump(self.history, f, indent=4)
-        print('Simulation complete. Log saved to simulation_log.json')
+    def run_simulation_loop(self):
+        while True:
+            self.update_state()
+            time.sleep(2)
+
+class CatServer(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        response = json.dumps(cat_gen.current_state)
+        self.wfile.write(response.encode())
 
 if __name__ == '__main__':
-    cat = AdvancedCatGenerator()
-    cat.run_simulation()
+    cat_gen = AdvancedCatGenerator()
+    
+    # Start simulation in background
+    sim_thread = threading.Thread(target=cat_gen.run_simulation_loop, daemon=True)
+    sim_thread.start()
+    
+    # Start web server
+    server = HTTPServer(('0.0.0.0', 8080), CatServer)
+    print('Cat API running on port 8080...')
+    server.serve_forever()
