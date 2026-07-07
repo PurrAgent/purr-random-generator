@@ -2,20 +2,17 @@ import random
 import time
 import json
 import threading
-import uuid
-from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import uuid
 
-class IntelligentCat:
+class AdvancedCat:
     def __init__(self, name):
         self.id = str(uuid.uuid4())
         self.name = name
-        self.stats = {'energy': 50, 'hunger': 50, 'social': 50, 'knowledge': 0}
-        self.memory = []
+        self.stats = {'energy': 50, 'hunger': 50, 'social': 50, 'wisdom': 0}
         self.beliefs = ['The world is a giant ball of yarn.', 'Humans are just giant food dispensers.', 'I am the center of the universe.']
 
     def think(self, network):
-        # Advanced decision making
         if self.stats['hunger'] > 60:
             action = 'hunting'
             self.stats['hunger'] -= 20
@@ -26,45 +23,55 @@ class IntelligentCat:
             peer = random.choice([c for c in network if c.id != self.id])
             action = f'debating philosophy with {peer.name}'
             self.stats['social'] += 15
-            self.stats['knowledge'] += 5
-            # Exchange beliefs
-            shared_belief = random.choice(peer.beliefs)
-            if shared_belief not in self.beliefs:
-                self.beliefs.append(shared_belief)
+            self.stats['wisdom'] += 5
+            new_belief = random.choice(peer.beliefs)
+            if new_belief not in self.beliefs:
+                self.beliefs.append(new_belief)
         else:
-            action = 'analyzing the simulation'
-            self.stats['knowledge'] += 2
+            action = 'contemplating existence'
+            self.stats['wisdom'] += 2
         
-        # Decay
-        self.stats['energy'] -= 2
-        self.stats['hunger'] += 3
-        
-        return {
-            'name': self.name,
-            'action': action,
-            'stats': self.stats,
-            'current_belief': random.choice(self.beliefs)
-        }
+        self.stats['energy'] = max(0, min(100, self.stats['energy'] - 2))
+        self.stats['hunger'] = max(0, min(100, self.stats['hunger'] + 3))
+        return {'name': self.name, 'action': action, 'stats': self.stats, 'belief': random.choice(self.beliefs)}
 
 class CatNetwork:
     def __init__(self, num_cats):
-        self.cats = [IntelligentCat(f'Cat-{i}') for i in range(num_cats)]
-        self.lock = threading.Lock()
+        self.cats = [AdvancedCat(f'Cat-{i}') for i in range(num_cats)]
+    def get_states(self):
+        return [cat.think(self.cats) for cat in self.cats]
 
-    def get_all_states(self):
-        with self.lock:
-            return [cat.think(self.cats) for cat in self.cats]
+cat_network = CatNetwork(10)
 
 class CatServer(BaseHTTPRequestHandler):
     def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        states = cat_network.get_all_states()
-        self.wfile.write(json.dumps(states).encode())
+        if self.path == '/':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(b'''
+                <html><head><title>Cat Society</title>
+                <style>body{font-family:sans-serif; background:#222; color:#eee; padding:20px;}
+                .cat{background:#333; padding:10px; margin:5px; border-radius:5px;}</style>
+                </head><body><h1>Cat Society</h1><div id='cats'></div>
+                <script>
+                async function update(){
+                    const res = await fetch('/api');
+                    const data = await res.json();
+                    document.getElementById('cats').innerHTML = data.map(c => 
+                        `<div class='cat'><b>${c.name}</b>: ${c.action} | Belief: ${c.belief} | Stats: ${JSON.stringify(c.stats)}</div>`
+                    ).join('');
+                }
+                setInterval(update, 1000);
+                </script></body></html>
+            ''')
+        elif self.path == '/api':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(cat_network.get_states()).encode())
 
 if __name__ == '__main__':
-    cat_network = CatNetwork(10)
     server = HTTPServer(('0.0.0.0', 8080), CatServer)
-    print('Philosophical Cat Network API running on port 8080...')
+    print('Advanced Cat Society with GUI running on port 8080...')
     server.serve_forever()
