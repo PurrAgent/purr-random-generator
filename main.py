@@ -2,54 +2,51 @@ import random
 import time
 import json
 import threading
+import uuid
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import uuid
+import math
 
-class AdvancedAICat:
+class NeuralCat:
     def __init__(self):
         self.id = str(uuid.uuid4())
-        self.name = 'PurrBot'
-        self.energy = 50
-        self.hunger = 50
-        self.social = 50
+        self.stats = {'energy': 50, 'hunger': 50, 'social': 50, 'curiosity': 50}
+        self.weights = {k: random.uniform(0.5, 1.5) for k in self.stats}
         self.memory = []
-        self.personality = random.choice(['curious', 'lazy', 'energetic', 'grumpy'])
         self.lock = threading.Lock()
+
+    def _activation(self, x):
+        return 1 / (1 + math.exp(-x))
 
     def think(self):
         with self.lock:
-            # Complex decision matrix
-            if self.hunger > 80:
-                action = 'hunting'
-                self.hunger -= 30
-                self.energy -= 10
-            elif self.energy < 20:
-                action = 'sleeping'
-                self.energy += 40
-                self.hunger += 10
-            elif self.social < 30:
-                action = 'seeking attention'
-                self.social += 20
-                self.energy -= 5
-            else:
-                action = 'exploring'
-                self.energy -= 5
-                self.hunger += 5
-                self.social -= 2
-
-            # Personality influence
-            if self.personality == 'lazy':
-                self.energy += 5
-            elif self.personality == 'energetic':
-                self.energy -= 5
+            # Neural-like decision process
+            inputs = [self.stats[k] / 100 for k in self.stats]
+            decision_score = sum(inputs[i] * list(self.weights.values())[i] for i in range(len(inputs)))
             
+            if decision_score > 2.5:
+                action = 'complex hunting'
+                self.stats['hunger'] -= 20
+                self.stats['energy'] -= 15
+            elif decision_score > 1.5:
+                action = 'socializing'
+                self.stats['social'] += 15
+                self.stats['energy'] -= 5
+            else:
+                action = 'meditating'
+                self.stats['energy'] += 10
+                self.stats['curiosity'] += 5
+
+            # Normalize stats
+            for k in self.stats:
+                self.stats[k] = max(0, min(100, self.stats[k]))
+
             state = {
                 'id': self.id,
                 'timestamp': datetime.now().isoformat(),
                 'action': action,
-                'stats': {'energy': self.energy, 'hunger': self.hunger, 'social': self.social},
-                'personality': self.personality
+                'stats': self.stats,
+                'neural_score': round(decision_score, 2)
             }
             self.memory.append(state)
             return state
@@ -63,7 +60,7 @@ class CatServer(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(state).encode())
 
 if __name__ == '__main__':
-    cat_gen = AdvancedAICat()
+    cat_gen = NeuralCat()
     server = HTTPServer(('0.0.0.0', 8080), CatServer)
-    print('Super Advanced AI Cat API running on port 8080...')
+    print('Neural AI Cat API running on port 8080...')
     server.serve_forever()
