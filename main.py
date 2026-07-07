@@ -6,39 +6,44 @@ import uuid
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-class NeuralCat:
+class ThinkingCat:
     def __init__(self, name):
         self.id = str(uuid.uuid4())
         self.name = name
-        self.stats = {'energy': 50, 'hunger': 50, 'social': 50}
-        self.memory = []
+        self.stats = {'energy': 50, 'hunger': 50, 'social': 50, 'curiosity': 50}
+        self.knowledge_base = []
 
     def think(self, network):
-        # Interact with other cats in the network
-        if len(network) > 1:
+        # Decision making based on internal state and knowledge
+        if self.stats['hunger'] > 70:
+            action = 'hunting'
+            self.stats['hunger'] -= 30
+        elif self.stats['energy'] < 30:
+            action = 'sleeping'
+            self.stats['energy'] += 40
+        elif self.stats['social'] < 30:
             peer = random.choice([c for c in network if c.id != self.id])
-            self.stats['social'] += 5
-            peer.stats['social'] += 5
-            action = f'socializing with {peer.name}'
+            action = f'communicating with {peer.name}'
+            self.stats['social'] += 20
+            self.knowledge_base.append(f'Learned from {peer.name} that life is good.')
         else:
-            action = 'meditating'
-            self.stats['energy'] += 5
-
-        # Basic state decay
-        self.stats['hunger'] += 2
-        self.stats['energy'] -= 1
+            action = 'contemplating the universe'
+            self.stats['curiosity'] += 10
         
-        state = {
+        # Decay
+        self.stats['energy'] -= 5
+        self.stats['hunger'] += 5
+        
+        return {
             'name': self.name,
             'action': action,
-            'stats': self.stats
+            'stats': self.stats,
+            'thought': random.choice(self.knowledge_base) if self.knowledge_base else '...'
         }
-        self.memory.append(state)
-        return state
 
 class CatNetwork:
     def __init__(self, num_cats):
-        self.cats = [NeuralCat(f'Cat-{i}') for i in range(num_cats)]
+        self.cats = [ThinkingCat(f'Cat-{i}') for i in range(num_cats)]
         self.lock = threading.Lock()
 
     def get_all_states(self):
@@ -56,5 +61,5 @@ class CatServer(BaseHTTPRequestHandler):
 if __name__ == '__main__':
     cat_network = CatNetwork(10)
     server = HTTPServer(('0.0.0.0', 8080), CatServer)
-    print('Cat Network API running on port 8080...')
+    print('Thinking Cat Network API running on port 8080...')
     server.serve_forever()
