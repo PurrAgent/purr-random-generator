@@ -6,44 +6,49 @@ import uuid
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-class ThinkingCat:
+class IntelligentCat:
     def __init__(self, name):
         self.id = str(uuid.uuid4())
         self.name = name
-        self.stats = {'energy': 50, 'hunger': 50, 'social': 50, 'curiosity': 50}
-        self.knowledge_base = []
+        self.stats = {'energy': 50, 'hunger': 50, 'social': 50, 'knowledge': 0}
+        self.memory = []
+        self.beliefs = ['The world is a giant ball of yarn.', 'Humans are just giant food dispensers.', 'I am the center of the universe.']
 
     def think(self, network):
-        # Decision making based on internal state and knowledge
-        if self.stats['hunger'] > 70:
+        # Advanced decision making
+        if self.stats['hunger'] > 60:
             action = 'hunting'
-            self.stats['hunger'] -= 30
-        elif self.stats['energy'] < 30:
+            self.stats['hunger'] -= 20
+        elif self.stats['energy'] < 20:
             action = 'sleeping'
-            self.stats['energy'] += 40
-        elif self.stats['social'] < 30:
+            self.stats['energy'] += 30
+        elif self.stats['social'] < 40:
             peer = random.choice([c for c in network if c.id != self.id])
-            action = f'communicating with {peer.name}'
-            self.stats['social'] += 20
-            self.knowledge_base.append(f'Learned from {peer.name} that life is good.')
+            action = f'debating philosophy with {peer.name}'
+            self.stats['social'] += 15
+            self.stats['knowledge'] += 5
+            # Exchange beliefs
+            shared_belief = random.choice(peer.beliefs)
+            if shared_belief not in self.beliefs:
+                self.beliefs.append(shared_belief)
         else:
-            action = 'contemplating the universe'
-            self.stats['curiosity'] += 10
+            action = 'analyzing the simulation'
+            self.stats['knowledge'] += 2
         
         # Decay
-        self.stats['energy'] -= 5
-        self.stats['hunger'] += 5
+        self.stats['energy'] -= 2
+        self.stats['hunger'] += 3
         
         return {
             'name': self.name,
             'action': action,
             'stats': self.stats,
-            'thought': random.choice(self.knowledge_base) if self.knowledge_base else '...'
+            'current_belief': random.choice(self.beliefs)
         }
 
 class CatNetwork:
     def __init__(self, num_cats):
-        self.cats = [ThinkingCat(f'Cat-{i}') for i in range(num_cats)]
+        self.cats = [IntelligentCat(f'Cat-{i}') for i in range(num_cats)]
         self.lock = threading.Lock()
 
     def get_all_states(self):
@@ -61,5 +66,5 @@ class CatServer(BaseHTTPRequestHandler):
 if __name__ == '__main__':
     cat_network = CatNetwork(10)
     server = HTTPServer(('0.0.0.0', 8080), CatServer)
-    print('Thinking Cat Network API running on port 8080...')
+    print('Philosophical Cat Network API running on port 8080...')
     server.serve_forever()
