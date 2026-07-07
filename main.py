@@ -5,33 +5,44 @@ import threading
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-class AdvancedCatGenerator:
+class AICatGenerator:
     def __init__(self):
         self.purrs = ['Meow!', 'Purrr...', 'Mrow?', 'Nya!', 'Hiss!', 'Prrrp!', 'Chirp!']
-        self.moods = {
-            'happy': {'energy': 80, 'hunger': 20},
-            'hungry': {'energy': 30, 'hunger': 90},
-            'sleepy': {'energy': 10, 'hunger': 40},
-            'playful': {'energy': 95, 'hunger': 50}
-        }
+        self.energy = 50
+        self.hunger = 50
         self.history = []
         self.current_state = {}
 
-    def update_state(self):
-        mood = random.choice(list(self.moods.keys()))
-        sound = random.choice(self.purrs)
-        stats = self.moods[mood]
+    def think(self):
+        # AI-like decision making based on internal state
+        if self.hunger > 70:
+            action = 'looking for food'
+            self.hunger -= 20
+            self.energy -= 5
+        elif self.energy < 30:
+            action = 'taking a nap'
+            self.energy += 30
+            self.hunger += 5
+        elif self.energy > 80:
+            action = 'running around'
+            self.energy -= 20
+            self.hunger += 10
+        else:
+            action = 'purring'
+            self.energy -= 2
+            self.hunger += 2
+        
         self.current_state = {
             'timestamp': datetime.now().isoformat(),
-            'mood': mood,
-            'sound': sound,
-            'stats': stats
+            'action': action,
+            'sound': random.choice(self.purrs),
+            'stats': {'energy': self.energy, 'hunger': self.hunger}
         }
         self.history.append(self.current_state)
 
     def run_simulation_loop(self):
         while True:
-            self.update_state()
+            self.think()
             time.sleep(2)
 
 class CatServer(BaseHTTPRequestHandler):
@@ -43,7 +54,7 @@ class CatServer(BaseHTTPRequestHandler):
         self.wfile.write(response.encode())
 
 if __name__ == '__main__':
-    cat_gen = AdvancedCatGenerator()
+    cat_gen = AICatGenerator()
     
     # Start simulation in background
     sim_thread = threading.Thread(target=cat_gen.run_simulation_loop, daemon=True)
@@ -51,5 +62,5 @@ if __name__ == '__main__':
     
     # Start web server
     server = HTTPServer(('0.0.0.0', 8080), CatServer)
-    print('Cat API running on port 8080...')
+    print('AI Cat API running on port 8080...')
     server.serve_forever()
